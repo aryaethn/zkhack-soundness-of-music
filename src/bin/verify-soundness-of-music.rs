@@ -21,7 +21,11 @@ fn main() {
     let public_inputs = [Fr::one(), Fr::one()];
 
     /* Your solution here! */
-
-    // Replace unimplmented!() with your proof
-    assert!(verifier::verify(&public_inputs, &setup, unimplemented!()));
+    
+    // Use the fake_prove function to generate a fake proof
+    let proof = prover::fake_prove(&public_inputs, 1, &setup); // 1 private input (z variable)
+    
+    // Verify the fake proof
+    assert!(verifier::verify(&public_inputs, &setup, &proof));
+    println!("Puzzle Solved!✅");
 }

@@ -5,7 +5,7 @@ use ark_ff::Zero;
 use ark_poly::polynomial::univariate::DensePolynomial;
 use ark_poly::UVPolynomial;
 use itertools::izip;
-use std::ops::Mul;
+use std::ops::{Mul, Neg};
 
 #[derive(Debug)]
 pub struct Proof<E: PairingEngine> {
@@ -15,6 +15,44 @@ pub struct Proof<E: PairingEngine> {
     pub pi_output_prime: E::G1Affine,
     pub pi_K: E::G1Affine,
     pub pi_H: E::G1Affine,
+}
+
+pub fn fake_prove<E: PairingEngine>(
+    public_inputs: &[E::Fr],
+    private_inputs_len: usize,
+    setup: &Setup<E>,
+) -> Proof<E> {
+    let mut pub_inputs = vec![];
+    let mut pri_inputs = vec![];
+
+    for i in 0..public_inputs.len() {
+        pub_inputs.push(public_inputs[i].neg());
+    }
+
+    for _ in 0..private_inputs_len {
+        pri_inputs.push(E::Fr::zero());
+    }
+
+    let mut private_input_polynomials = E::G1Projective::zero();
+    let mut private_input_polynomials_prime = E::G1Projective::zero();
+
+    for (private_input, private_input_polynomial, private_input_polynomial_prime) in izip!(
+        pub_inputs.iter().chain(pri_inputs.iter()),
+        setup.inputs.iter(),
+        setup.inputs_prime.iter()
+    ) {
+        private_input_polynomials += private_input_polynomial.mul(*private_input);
+        private_input_polynomials_prime += private_input_polynomial_prime.mul(*private_input);
+    }
+
+    Proof::<E> {
+        pi_input: private_input_polynomials.into(),
+        pi_input_prime: private_input_polynomials_prime.into(),
+        pi_output: E::G1Affine::zero(),
+        pi_output_prime: E::G1Affine::zero(),
+        pi_K: E::G1Affine::zero(),
+        pi_H: E::G1Affine::zero(),
+    }
 }
 
 pub fn prove<E: PairingEngine>(
